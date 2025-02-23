@@ -13,17 +13,25 @@ public class Arcsin {
         }
 
         double result = 0.0;
+        double term = x; // Первый член ряда (x^(2k+1))
+        double logFact2k = 0.0; // Логарифм факториала (2k)!
+        double logFactK = 0.0; // Логарифм факториала k!
+
         for (int k = 0; k < terms; k++) {
-            double numerator = factorial(2 * k);
-            double denominator = Math.pow(4, k) * Math.pow(factorial(k), 2) * (2*k + 1);
-            result += (numerator / denominator) * Math.pow(x, (2*k + 1));
+            if (k > 0) {
+                logFact2k += Math.log(2 * k) + Math.log(2 * k - 1);
+                logFactK += Math.log(k);
+                term *= x * x; // x^(2k+1)
+            }
+
+            double logDenominator = logFactK * 2 + k * Math.log(4) + Math.log(2 * k + 1);
+            double coefficient = Math.exp(logFact2k - logDenominator);
+
+            double delta = coefficient * term;
+            if (Double.isNaN(delta) || Double.isInfinite(delta)) break; // Останавливаемся при переполнении
+
+            result += delta;
         }
         return result;
     }
-
-    private static double factorial(int n) {
-        if (n <= 1) return 1.0;
-        return n * factorial(n - 1);
-    }
 }
-
