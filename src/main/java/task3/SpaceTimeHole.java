@@ -9,10 +9,6 @@ public class SpaceTimeHole {
         this.destination = destination;
     }
 
-    /**
-     * "Переносит" сообщение из точки origin в destination.
-     * Для упрощения возвращаем контент без изменений.
-     */
     public String transportMessage(Message message) {
         return message.getContent();
     }

@@ -23,9 +23,6 @@ public class Galaxy {
         return name;
     }
 
-    /**
-     * Рассылает сообщение всем обитателям галактики.
-     */
     public void broadcastMessage(String messageContent) {
         for (WarlikeCreature creature : inhabitants) {
             creature.reactToMessage(messageContent);
