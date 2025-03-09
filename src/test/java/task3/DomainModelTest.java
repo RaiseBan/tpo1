@@ -135,6 +135,13 @@ public class DomainModelTest {
             creature.reactToMessage("Problems are escalating");
             assertEquals(WarStatus.ON_EDGE, creature.getWarStatus(), "При наличии слова 'Problems' статус должен стать ON_EDGE");
         }
+        @Test
+        @DisplayName("Проверка установки WarStatus через setWarStatus")
+        void testSetWarStatus() {
+            creature.setWarStatus(WarStatus.AT_WAR);
+            assertEquals(WarStatus.AT_WAR, creature.getWarStatus(), "WarStatus должен устанавливаться через setWarStatus");
+        }
+
     }
 
     @Nested

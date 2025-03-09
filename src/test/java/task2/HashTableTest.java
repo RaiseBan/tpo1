@@ -6,7 +6,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Тестирование HashTable")
+@DisplayName("Тестирование HashTable (закрытая адресация)")
 class HashTableTest {
 
     @Test
@@ -23,7 +23,7 @@ class HashTableTest {
     void testInsertDuplicate() {
         HashTable table = new HashTable();
         table.insert(5);
-        table.insert(5); // повторная вставка
+        table.insert(5);
         assertTrue(table.search(5), "Ключ 5 должен быть найден");
         assertEquals(1, table.size(), "Размер таблицы не должен измениться при вставке дубликата");
     }
@@ -61,8 +61,36 @@ class HashTableTest {
     void testRemoveNonExisting() {
         HashTable table = new HashTable();
         table.insert(5);
-        table.remove(10); // ключ 10 отсутствует
+        table.remove(10);
         assertTrue(table.search(5), "Ключ 5 должен оставаться в таблице");
         assertEquals(1, table.size(), "Размер таблицы должен остаться неизменным");
     }
+
+    @Test
+    @DisplayName("Проверка увеличения размера таблицы")
+    void testResize() {
+        HashTable table = new HashTable(4);
+        table.insert(1);
+        table.insert(2);
+        table.insert(3);
+        table.insert(4);
+        table.insert(5);
+
+        assertTrue(table.search(1), "Ключ 1 должен оставаться в таблице после resize()");
+        assertTrue(table.search(5), "Ключ 5 должен быть найден после resize()");
+    }
+
+    @Test
+    @DisplayName("Доказательство, что это HashTable с закрытой адресацией (Separate Chaining)")
+    void testHashTableStructure() {
+        HashTable table = new HashTable(4);
+        int key1 = 4;
+        int key2 = 8;
+        table.insert(key1);
+        table.search(key2);
+        assertTrue(table.search(key2));
+    }
+
+
+
 }

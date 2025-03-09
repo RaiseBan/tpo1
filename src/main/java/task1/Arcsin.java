@@ -25,7 +25,6 @@ public class Arcsin {
             double coefficient = Math.exp(logFact2k - logDenominator);
 
             double delta = coefficient * term;
-            if (Double.isNaN(delta) || Double.isInfinite(delta)) break;
 
             result += delta;
         }

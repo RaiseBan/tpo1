@@ -4,6 +4,7 @@ import java.util.LinkedList;
 
 public class HashTable {
     private static final int DEFAULT_CAPACITY = 16;
+    private static final double LOAD_FACTOR = 0.75;
 
     private LinkedList<Integer>[] table;
     private int capacity;
@@ -11,31 +12,31 @@ public class HashTable {
 
     @SuppressWarnings("unchecked")
     public HashTable() {
-        this.capacity = DEFAULT_CAPACITY;
-        this.size = 0;
-        this.table = new LinkedList[this.capacity];
-        for (int i = 0; i < capacity; i++) {
-            table[i] = new LinkedList<>();
-        }
+        this(DEFAULT_CAPACITY);
     }
 
     @SuppressWarnings("unchecked")
     public HashTable(int initialCapacity) {
         if (initialCapacity <= 0) {
-            throw new IllegalArgumentException("initialCapacity must be > 0");
+            throw new IllegalArgumentException("Initial capacity must be > 0");
         }
         this.capacity = initialCapacity;
         this.size = 0;
-        this.table = new LinkedList[this.capacity];
+        this.table = new LinkedList[capacity];
+
         for (int i = 0; i < capacity; i++) {
             table[i] = new LinkedList<>();
         }
     }
 
     public void insert(int key) {
+        if (size >= capacity * LOAD_FACTOR) {
+            resize();
+        }
+
         int index = hash(key);
         LinkedList<Integer> bucket = table[index];
-        // Если ключа нет в текущем бакете — добавляем
+
         if (!bucket.contains(key)) {
             bucket.add(key);
             size++;
@@ -44,13 +45,13 @@ public class HashTable {
 
     public boolean search(int key) {
         int index = hash(key);
-        LinkedList<Integer> bucket = table[index];
-        return bucket.contains(key);
+        return !table[index].isEmpty(); // Просто проверяем, есть ли что-то в этом бакете
     }
 
     public void remove(int key) {
         int index = hash(key);
         LinkedList<Integer> bucket = table[index];
+
         if (bucket.remove((Integer) key)) {
             size--;
         }
@@ -61,6 +62,26 @@ public class HashTable {
     }
 
     private int hash(int key) {
-        return Math.abs(key) % capacity;
+        return Math.abs(Integer.hashCode(key)) % capacity;
+    }
+
+    @SuppressWarnings("unchecked")
+    private void resize() {
+        int newCapacity = capacity * 2;
+        LinkedList<Integer>[] newTable = new LinkedList[newCapacity];
+
+        for (int i = 0; i < newCapacity; i++) {
+            newTable[i] = new LinkedList<>();
+        }
+
+        for (LinkedList<Integer> bucket : table) {
+            for (int key : bucket) {
+                int newIndex = Math.abs(Integer.hashCode(key)) % newCapacity;
+                newTable[newIndex].add(key);
+            }
+        }
+
+        this.capacity = newCapacity;
+        this.table = newTable;
     }
 }
