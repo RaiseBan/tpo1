@@ -1,96 +1,137 @@
 package task2;
 
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.util.LinkedList;
+
 import static org.junit.jupiter.api.Assertions.*;
 
-@DisplayName("Тестирование HashTable (закрытая адресация)")
-class HashTableTest {
+public class HashTableTest {
 
-    @Test
-    @DisplayName("Вставка уникального ключа")
-    void testInsertUnique() {
-        HashTable table = new HashTable();
-        table.insert(5);
-        assertTrue(table.search(5), "Ключ 5 должен быть найден после вставки");
-        assertEquals(1, table.size(), "Размер таблицы должен быть равен 1");
+    // Класс для проверки коллизий:
+    // У каждого объекта — один и тот же hashCode, но разные поля data => разные equals().
+    static class CollisionKey {
+        private final String data;
+
+        CollisionKey(String data) {
+            this.data = data;
+        }
+
+        @Override
+        public int hashCode() {
+            return 42; // Один хэш на всех
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            CollisionKey other = (CollisionKey) obj;
+            return data.equals(other.data);
+        }
     }
 
     @Test
-    @DisplayName("Вставка дубликата ключа не увеличивает размер")
-    void testInsertDuplicate() {
-        HashTable table = new HashTable();
-        table.insert(5);
-        table.insert(5);
-        assertTrue(table.search(5), "Ключ 5 должен быть найден");
-        assertEquals(1, table.size(), "Размер таблицы не должен измениться при вставке дубликата");
-    }
-
-    @ParameterizedTest(name = "Проверка поиска для ключа {0}")
-    @ValueSource(ints = {10, 20, 30})
-    @DisplayName("Параметризованный тест поиска существующих ключей")
-    void testSearchExisting(int key) {
-        HashTable table = new HashTable();
-        table.insert(key);
-        assertTrue(table.search(key), "Ключ " + key + " должен быть найден");
+    public void testPut() {
+        HashTable<String, Integer> table = new HashTable<>();
+        table.put("one", 1);
+        assertEquals(1, table.get("one"));
+        table.put("one", 10);
+        assertEquals(10, table.get("one"));
     }
 
     @Test
-    @DisplayName("Поиск несуществующего ключа")
-    void testSearchNonExisting() {
-        HashTable table = new HashTable();
-        table.insert(10);
-        assertFalse(table.search(20), "Ключ 20 не должен быть найден");
+    public void testGet() {
+        HashTable<String, Integer> table = new HashTable<>();
+        table.put("two", 2);
+        table.put("three", 3);
+
+        assertEquals(2, table.get("two"));
+        assertEquals(3, table.get("three"));
+        assertNull(table.get("four"));
     }
 
     @Test
-    @DisplayName("Удаление существующего ключа")
-    void testRemoveExisting() {
-        HashTable table = new HashTable();
-        table.insert(5);
-        assertTrue(table.search(5), "Ключ 5 должен быть найден до удаления");
-        table.remove(5);
-        assertFalse(table.search(5), "Ключ 5 не должен быть найден после удаления");
-        assertEquals(0, table.size(), "Размер таблицы должен уменьшиться до 0");
+    public void testRemove() {
+        HashTable<String, Integer> table = new HashTable<>();
+        table.put("A", 100);
+        table.put("B", 200);
+
+        assertEquals(100, table.remove("A"));
+        assertNull(table.get("A"));
+        assertEquals(1, table.size());
     }
 
     @Test
-    @DisplayName("Удаление несуществующего ключа не изменяет размер")
-    void testRemoveNonExisting() {
-        HashTable table = new HashTable();
-        table.insert(5);
-        table.remove(10);
-        assertTrue(table.search(5), "Ключ 5 должен оставаться в таблице");
-        assertEquals(1, table.size(), "Размер таблицы должен остаться неизменным");
+    public void testSize() {
+        HashTable<String, Integer> table = new HashTable<>();
+        table.put("X", 1);
+        table.put("Y", 2);
+        table.put("Z", 3);
+
+        assertEquals(3, table.size());
+        table.remove("Y");
+        assertEquals(2, table.size());
     }
+
+    /**
+     * Проверка коллизий, подтверждающая работу именно как хэш-таблицы:
+     * - Два объекта с одинаковым hashCode, но разным equals.
+     * - Сначала кладём (key1 -> value1), убеждаемся, что по key2 вернётся null.
+     * - После добавляем (key2 -> value2), проверяем, что всё лежит корректно.
+     */
+    @Test
+    public void testCollisionHandling() {
+        HashTable<CollisionKey, String> table = new HashTable<>();
+        CollisionKey key1 = new CollisionKey("First");
+        CollisionKey key2 = new CollisionKey("Second");
+
+        // Кладём (key1 -> "value1")
+        table.put(key1, "value1");
+
+        // Должно вернуться null по key2, т. к. equals() !=
+        assertNull(table.get(key2),
+                "При правильной обработке коллизий key2 не должен находить value1");
+
+        // Теперь кладём (key2 -> "value2")
+        table.put(key2, "value2");
+
+        // Убеждаемся, что обе записи доступны
+        assertEquals("value1", table.get(key1));
+        assertEquals("value2", table.get(key2));
+    }
+
+
 
     @Test
-    @DisplayName("Проверка увеличения размера таблицы")
-    void testResize() {
-        HashTable table = new HashTable(4);
-        table.insert(1);
-        table.insert(2);
-        table.insert(3);
-        table.insert(4);
-        table.insert(5);
+    @SuppressWarnings("unchecked")
+    public void testSameHashButDifferentObjectsInsideOneBucket() throws Exception {
+        HashTable<CollisionKey, String> table = new HashTable<>();
+        CollisionKey key1 = new CollisionKey("AAA");
+        CollisionKey key2 = new CollisionKey("BBB");
 
-        assertTrue(table.search(1), "Ключ 1 должен оставаться в таблице после resize()");
-        assertTrue(table.search(5), "Ключ 5 должен быть найден после resize()");
+        table.put(key1, "ValueForAAA");
+        assertNull(table.get(key2));  // equals у key1 и key2 -> false, поэтому null
+
+        Method getBucketIndexMethod = HashTable.class.getDeclaredMethod("getBucketIndex", Object.class);
+        getBucketIndexMethod.setAccessible(true);
+        int indexForKey2 = (int) getBucketIndexMethod.invoke(table, key2);
+
+        Field bucketsField = HashTable.class.getDeclaredField("buckets");
+        bucketsField.setAccessible(true);
+        LinkedList<?>[] buckets = (LinkedList<?>[]) bucketsField.get(table);
+
+        LinkedList<?> bucket = buckets[indexForKey2];
+        assertEquals(1, bucket.size());  // key1 уже лежит в этом бакете
+
+        Object entryObject = bucket.get(0);
+        Field keyField = entryObject.getClass().getDeclaredField("key");
+        keyField.setAccessible(true);
+        CollisionKey storedKey = (CollisionKey) keyField.get(entryObject);
+
+        assertSame(key1, storedKey);  // внутри лежит key1, а не key2, хотя хэш у них один
     }
-
-    @Test
-    @DisplayName("Доказательство, что это HashTable с закрытой адресацией (Separate Chaining)")
-    void testHashTableStructure() {
-        HashTable table = new HashTable(4);
-        int key1 = 4;
-        int key2 = 8;
-        table.insert(key1);
-        table.search(key2);
-        assertTrue(table.search(key2));
-    }
-
-
 
 }
