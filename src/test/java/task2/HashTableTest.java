@@ -10,8 +10,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class HashTableTest {
 
-    // Класс для проверки коллизий:
-    // У каждого объекта — один и тот же hashCode, но разные поля data => разные equals().
+
     static class CollisionKey {
         private final String data;
 
@@ -76,22 +75,15 @@ public class HashTableTest {
         assertEquals(2, table.size());
     }
 
-    /**
-     * Проверка коллизий, подтверждающая работу именно как хэш-таблицы:
-     * - Два объекта с одинаковым hashCode, но разным equals.
-     * - Сначала кладём (key1 -> value1), убеждаемся, что по key2 вернётся null.
-     * - После добавляем (key2 -> value2), проверяем, что всё лежит корректно.
-     */
+
     @Test
     public void testCollisionHandling() {
         HashTable<CollisionKey, String> table = new HashTable<>();
         CollisionKey key1 = new CollisionKey("First");
         CollisionKey key2 = new CollisionKey("Second");
 
-        // Кладём (key1 -> "value1")
         table.put(key1, "value1");
 
-        // Должно вернуться null по key2, т. к. equals() !=
         assertNull(table.get(key2),
                 "При правильной обработке коллизий key2 не должен находить value1");
 
@@ -113,7 +105,7 @@ public class HashTableTest {
         CollisionKey key2 = new CollisionKey("BBB");
 
         table.put(key1, "ValueForAAA");
-        assertNull(table.get(key2));  // equals у key1 и key2 -> false, поэтому null
+        assertNull(table.get(key2));
 
         Method getBucketIndexMethod = HashTable.class.getDeclaredMethod("getBucketIndex", Object.class);
         getBucketIndexMethod.setAccessible(true);
@@ -124,14 +116,14 @@ public class HashTableTest {
         LinkedList<?>[] buckets = (LinkedList<?>[]) bucketsField.get(table);
 
         LinkedList<?> bucket = buckets[indexForKey2];
-        assertEquals(1, bucket.size());  // key1 уже лежит в этом бакете
+        assertEquals(1, bucket.size());
 
         Object entryObject = bucket.get(0);
         Field keyField = entryObject.getClass().getDeclaredField("key");
         keyField.setAccessible(true);
         CollisionKey storedKey = (CollisionKey) keyField.get(entryObject);
 
-        assertSame(key1, storedKey);  // внутри лежит key1, а не key2, хотя хэш у них один
+        assertSame(key1, storedKey);
     }
 
 }

@@ -27,7 +27,6 @@ public class WarlikeCreature {
         this.warStatus = warStatus;
     }
 
-
     public void reactToMessage(String message) {
         if (message != null && message.toLowerCase().contains("problems")) {
             this.warStatus = WarStatus.ON_EDGE;

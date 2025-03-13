@@ -10,6 +10,9 @@ public class SpaceTimeHole {
     }
 
     public String transportMessage(Message message) {
+        if (message == null || message.getContent() == null) {
+            throw new IllegalArgumentException("Сообщение не может быть пустым");
+        }
         return message.getContent();
     }
 

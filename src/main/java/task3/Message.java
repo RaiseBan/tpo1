@@ -5,6 +5,12 @@ public class Message {
     private final Person sender;
 
     public Message(Person sender, String content) {
+        if (content == null) {
+            throw new IllegalArgumentException("Контент сообщения не может быть null");
+        }
+        if (sender == null) {
+            throw new IllegalArgumentException("Отправитель не может быть null");
+        }
         this.sender = sender;
         this.content = content;
     }

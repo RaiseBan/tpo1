@@ -31,6 +31,13 @@ public class DomainModelTest {
                     }
             );
         }
+
+        @Test
+        @DisplayName("Проверка на null в методе speak")
+        void testPersonSpeakNull() {
+            person.speak(null);
+            assertNull(person.getSpokenPhrase(), "Фраза должна быть null, если передано null");
+        }
     }
 
     @Nested
@@ -51,6 +58,13 @@ public class DomainModelTest {
                     () -> assertEquals("Hello, Universe!", msg.getContent(), "Контент сообщения неверен"),
                     () -> assertEquals(sender, msg.getSender(), "Отправитель должен совпадать")
             );
+        }
+
+        @Test
+        @DisplayName("Проверка на null в конструкторе Message")
+        void testMessageNullContent() {
+            assertThrows(IllegalArgumentException.class, () -> new Message(sender, null),
+                    "Сообщение с null-контентом должно выбрасывать исключение");
         }
     }
 
@@ -81,26 +95,36 @@ public class DomainModelTest {
                     () -> assertEquals("Magrathea", hole.getDestination(), "Destination должен быть 'Magrathea'")
             );
         }
+
+        @Test
+        @DisplayName("Проверка на null в методе transportMessage")
+        void testTransportMessageNull() {
+            assertThrows(IllegalArgumentException.class, () -> hole.transportMessage(null),
+                    "Передача null-сообщения должна выбрасывать исключение");
+        }
     }
 
     @Nested
     @DisplayName("Тесты для Galaxy")
     class GalaxyTests {
         private Galaxy galaxy;
-        private WarlikeCreature creature;
+        private WarlikeCreature creature1;
+        private WarlikeCreature creature2;
 
         @BeforeEach
         void init() {
             galaxy = new Galaxy("Milky Way");
-            creature = new WarlikeCreature("Zorg", WarStatus.PEACE, CreatureType.WARRIOR);
-            galaxy.addInhabitant(creature);
+            creature1 = new WarlikeCreature("Zorg", WarStatus.PEACE, CreatureType.WARRIOR);
+            creature2 = new WarlikeCreature("Vogon", WarStatus.PEACE, CreatureType.SCOUT);
+            galaxy.addInhabitant(creature1);
+            galaxy.addInhabitant(creature2);
         }
 
         @Test
         @DisplayName("Добавление обитателя")
         void testAddInhabitant() {
             assertAll(
-                    () -> assertEquals(1, galaxy.getInhabitants().size(), "В галактике должен быть 1 обитатель"),
+                    () -> assertEquals(2, galaxy.getInhabitants().size(), "В галактике должно быть 2 обитателя"),
                     () -> assertEquals("Zorg", galaxy.getInhabitants().get(0).getSpecies(), "Название вида не совпадает")
             );
         }
@@ -109,7 +133,27 @@ public class DomainModelTest {
         @DisplayName("Рассылка сообщения и реакция существа")
         void testBroadcastMessage() {
             galaxy.broadcastMessage("There are problems in the sector");
-            assertEquals(WarStatus.ON_EDGE, creature.getWarStatus(), "Состояние существа должно измениться на ON_EDGE");
+            assertAll(
+                    () -> assertEquals(WarStatus.ON_EDGE, creature1.getWarStatus(), "Состояние существа 1 должно измениться на ON_EDGE"),
+                    () -> assertEquals(WarStatus.ON_EDGE, creature2.getWarStatus(), "Состояние существа 2 должно измениться на ON_EDGE")
+            );
+        }
+
+        @Test
+        @DisplayName("Проверка коллективного состояния галактики")
+        void testCollectiveWarStatus() {
+            galaxy.broadcastMessage("Problems everywhere");
+            assertEquals(WarStatus.ON_EDGE, galaxy.getCollectiveWarStatus(), "Галактика должна быть в состоянии ON_EDGE");
+
+            creature1.setWarStatus(WarStatus.AT_WAR);
+            assertEquals(WarStatus.AT_WAR, galaxy.getCollectiveWarStatus(), "Галактика должна быть в состоянии AT_WAR");
+        }
+
+        @Test
+        @DisplayName("Проверка на null в методе broadcastMessage")
+        void testBroadcastMessageNull() {
+            assertThrows(IllegalArgumentException.class, () -> galaxy.broadcastMessage(null),
+                    "Передача null-сообщения должна выбрасывать исключение");
         }
     }
 
@@ -135,6 +179,7 @@ public class DomainModelTest {
             creature.reactToMessage("Problems are escalating");
             assertEquals(WarStatus.ON_EDGE, creature.getWarStatus(), "При наличии слова 'Problems' статус должен стать ON_EDGE");
         }
+
         @Test
         @DisplayName("Проверка установки WarStatus через setWarStatus")
         void testSetWarStatus() {
@@ -142,6 +187,12 @@ public class DomainModelTest {
             assertEquals(WarStatus.AT_WAR, creature.getWarStatus(), "WarStatus должен устанавливаться через setWarStatus");
         }
 
+        @Test
+        @DisplayName("Проверка на null в методе reactToMessage")
+        void testReactToMessageNull() {
+            creature.reactToMessage(null);
+            assertEquals(WarStatus.PEACE, creature.getWarStatus(), "Статус не должен измениться при null-сообщении");
+        }
     }
 
     @Nested
