@@ -2,18 +2,18 @@ package task3;
 
 public class SpaceTimeHole {
     private final String origin;
-    private final String destination;
+    private final Galaxy destinationGalaxy;
 
-    public SpaceTimeHole(String origin, String destination) {
+    public SpaceTimeHole(String origin, Galaxy destinationGalaxy) {
         this.origin = origin;
-        this.destination = destination;
+        this.destinationGalaxy = destinationGalaxy;
     }
 
-    public String transportMessage(Message message) {
+    public void transportMessage(Message message) {
         if (message == null || message.getContent() == null) {
             throw new IllegalArgumentException("Сообщение не может быть пустым");
         }
-        return message.getContent();
+        destinationGalaxy.receiveMessage(message);
     }
 
     public String getOrigin() {
@@ -21,6 +21,6 @@ public class SpaceTimeHole {
     }
 
     public String getDestination() {
-        return destination;
+        return destinationGalaxy.getName();
     }
 }

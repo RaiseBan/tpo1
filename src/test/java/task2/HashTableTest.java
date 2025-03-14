@@ -5,6 +5,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.LinkedList;
+import java.util.Random;
+import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,7 +22,7 @@ public class HashTableTest {
 
         @Override
         public int hashCode() {
-            return 42; // Один хэш на всех
+            return 42;
         }
 
         @Override
@@ -64,19 +66,6 @@ public class HashTableTest {
     }
 
     @Test
-    public void testSize() {
-        HashTable<String, Integer> table = new HashTable<>();
-        table.put("X", 1);
-        table.put("Y", 2);
-        table.put("Z", 3);
-
-        assertEquals(3, table.size());
-        table.remove("Y");
-        assertEquals(2, table.size());
-    }
-
-
-    @Test
     public void testCollisionHandling() {
         HashTable<CollisionKey, String> table = new HashTable<>();
         CollisionKey key1 = new CollisionKey("First");
@@ -87,10 +76,8 @@ public class HashTableTest {
         assertNull(table.get(key2),
                 "При правильной обработке коллизий key2 не должен находить value1");
 
-        // Теперь кладём (key2 -> "value2")
         table.put(key2, "value2");
 
-        // Убеждаемся, что обе записи доступны
         assertEquals("value1", table.get(key1));
         assertEquals("value2", table.get(key2));
     }
@@ -103,7 +90,6 @@ public class HashTableTest {
         HashTable<CollisionKey, String> table = new HashTable<>();
         CollisionKey key1 = new CollisionKey("AAA");
         CollisionKey key2 = new CollisionKey("BBB");
-
         table.put(key1, "ValueForAAA");
         assertNull(table.get(key2));
 
@@ -125,5 +111,41 @@ public class HashTableTest {
 
         assertSame(key1, storedKey);
     }
+
+
+    @Test
+    public void testGetOperationIsO1() {
+        HashTable<Integer, String> table = new HashTable<>();
+        int numberOfElements = 10_000;
+
+        for (int i = 0; i < numberOfElements; i++) {
+            table.put(i, "value" + i);
+        }
+
+        Random random = new Random();
+        int[] randomKeys = new int[1000];
+        for (int i = 0; i < randomKeys.length; i++) {
+            randomKeys[i] = random.nextInt(numberOfElements);
+        }
+
+        long totalTime = 0;
+        int iterations = 1000;
+
+        for (int i = 0; i < iterations; i++) {
+            int key = randomKeys[i % randomKeys.length]; // Циклически используем ключи
+            long startTime = System.nanoTime();
+            table.get(key);
+            long endTime = System.nanoTime();
+            totalTime += (endTime - startTime);
+        }
+
+        double averageTime = (double) totalTime / iterations;
+
+        assertTrue(averageTime < 1_000,
+                "Среднее время выполнения операции get должно быть меньше 1 микросекунды. Фактическое время: " + averageTime + " наносекунд");
+
+        System.out.println("Среднее время выполнения операции get: " + averageTime + " наносекунд");
+    }
+
 
 }

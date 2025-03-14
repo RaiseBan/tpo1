@@ -3,9 +3,11 @@ package task3;
 import java.util.ArrayList;
 import java.util.List;
 
+
 public class Galaxy {
     private final String name;
     private final List<WarlikeCreature> inhabitants = new ArrayList<>();
+    private Message lastReceivedMessage; // Храним последнее полученное сообщение
 
     public Galaxy(String name) {
         this.name = name;
@@ -26,15 +28,19 @@ public class Galaxy {
         return name;
     }
 
-    public void broadcastMessage(String messageContent) {
-        if (messageContent == null) {
+    public void receiveMessage(Message message) {
+        if (message == null) {
             throw new IllegalArgumentException("Сообщение не может быть null");
         }
+        lastReceivedMessage = message; // Сохраняем сообщение
         for (WarlikeCreature creature : inhabitants) {
-            creature.reactToMessage(messageContent);
+            creature.reactToMessage(message.getContent());
         }
     }
 
+    public Message getLastReceivedMessage() {
+        return lastReceivedMessage;
+    }
     public WarStatus getCollectiveWarStatus() {
         if (inhabitants.isEmpty()) {
             return WarStatus.PEACE;
@@ -56,12 +62,6 @@ public class Galaxy {
         }
     }
 
-    public void updateWarStatus() {
-        WarStatus collectiveStatus = getCollectiveWarStatus();
-        if (collectiveStatus == WarStatus.AT_WAR) {
-            for (WarlikeCreature creature : inhabitants) {
-                creature.setWarStatus(WarStatus.AT_WAR);
-            }
-        }
-    }
+
 }
+

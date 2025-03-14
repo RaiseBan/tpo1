@@ -91,7 +91,6 @@ public class HashTable<K, V> {
         this.threshold = (int) (newCapacity * LOAD_FACTOR); // Обновление порога
     }
 
-    // Класс Entry без изменений
     private static class Entry<K, V> {
         K key;
         V value;

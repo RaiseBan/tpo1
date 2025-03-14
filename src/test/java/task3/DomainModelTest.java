@@ -72,20 +72,34 @@ public class DomainModelTest {
     @DisplayName("Тесты для SpaceTimeHole")
     class SpaceTimeHoleTests {
         private SpaceTimeHole hole;
+        private Galaxy galaxy;
+        private WarlikeCreature creature;
 
         @BeforeEach
         void init() {
-            hole = new SpaceTimeHole("Earth", "Magrathea");
+            galaxy = new Galaxy("Magrathea");
+            creature = new WarlikeCreature("Vogon", WarStatus.PEACE, CreatureType.SCOUT);
+            galaxy.addInhabitant(creature);
+            hole = new SpaceTimeHole("Earth", galaxy);
         }
 
         @Test
-        @DisplayName("Перенос сообщения без изменений")
+        @DisplayName("Перенос сообщения в галактику")
         void testTransportMessage() {
             Person sender = new Person("Arthur");
             Message msg = new Message(sender, "I need a towel");
-            String transported = hole.transportMessage(msg);
-            assertEquals("I need a towel", transported, "Сообщение должно переноситься без изменений");
+
+            hole.transportMessage(msg);
+
+            // Проверяем, что сообщение получено галактикой
+            assertNotNull(galaxy.getLastReceivedMessage(), "Галактика должна получить сообщение");
+            assertEquals(msg.getContent(), galaxy.getLastReceivedMessage().getContent(),
+                    "Галактика должна получить корректный текст сообщения");
+            assertEquals(msg.getSender(), galaxy.getLastReceivedMessage().getSender(),
+                    "Отправитель сообщения должен совпадать");
         }
+
+
 
         @Test
         @DisplayName("Проверка origin и destination")
@@ -130,9 +144,11 @@ public class DomainModelTest {
         }
 
         @Test
-        @DisplayName("Рассылка сообщения и реакция существа")
-        void testBroadcastMessage() {
-            galaxy.broadcastMessage("There are problems in the sector");
+        @DisplayName("Получение сообщения и реакция существа")
+        void testReceiveMessage() {
+            Message msg = new Message(new Person("Arthur"), "Problems are escalating");
+            galaxy.receiveMessage(msg);
+
             assertAll(
                     () -> assertEquals(WarStatus.ON_EDGE, creature1.getWarStatus(), "Состояние существа 1 должно измениться на ON_EDGE"),
                     () -> assertEquals(WarStatus.ON_EDGE, creature2.getWarStatus(), "Состояние существа 2 должно измениться на ON_EDGE")
@@ -142,7 +158,8 @@ public class DomainModelTest {
         @Test
         @DisplayName("Проверка коллективного состояния галактики")
         void testCollectiveWarStatus() {
-            galaxy.broadcastMessage("Problems everywhere");
+            Message msg = new Message(new Person("Arthur"), "Problems everywhere");
+            galaxy.receiveMessage(msg);
             assertEquals(WarStatus.ON_EDGE, galaxy.getCollectiveWarStatus(), "Галактика должна быть в состоянии ON_EDGE");
 
             creature1.setWarStatus(WarStatus.AT_WAR);
@@ -150,9 +167,9 @@ public class DomainModelTest {
         }
 
         @Test
-        @DisplayName("Проверка на null в методе broadcastMessage")
-        void testBroadcastMessageNull() {
-            assertThrows(IllegalArgumentException.class, () -> galaxy.broadcastMessage(null),
+        @DisplayName("Проверка на null в методе receiveMessage")
+        void testReceiveMessageNull() {
+            assertThrows(IllegalArgumentException.class, () -> galaxy.receiveMessage(null),
                     "Передача null-сообщения должна выбрасывать исключение");
         }
     }
@@ -218,4 +235,7 @@ public class DomainModelTest {
             );
         }
     }
+
+
+
 }
